@@ -1,5 +1,6 @@
 using System.Net;
 
+// ReSharper disable once CheckNamespace
 namespace BaGetter.Azure
 {
     using StorageException = Microsoft.WindowsAzure.Storage.StorageException;

@@ -22,7 +22,7 @@ namespace BaGetter.Azure
         {
             return await _container
                 .GetBlockBlobReference(path)
-                .OpenReadAsync(cancellationToken);
+                .OpenReadAsync();
         }
 
         public Task<Uri> GetDownloadUriAsync(string path, CancellationToken cancellationToken)
@@ -65,7 +65,7 @@ namespace BaGetter.Azure
             }
             catch (StorageException e) when (e.IsAlreadyExistsException())
             {
-                using (var targetStream = await blob.OpenReadAsync(cancellationToken))
+                using (var targetStream = await blob.OpenReadAsync())
                 {
                     content.Position = 0;
                     return content.Matches(targetStream)
@@ -79,7 +79,7 @@ namespace BaGetter.Azure
         {
             await _container
                 .GetBlockBlobReference(path)
-                .DeleteIfExistsAsync(cancellationToken);
+                .DeleteIfExistsAsync();
         }
     }
 }

@@ -11,14 +11,16 @@
     <PackageReference Include="Azure.Search.Documents" />
     <PackageReference Include="Azure.Storage.Blobs" />
     <PackageReference Include="Microsoft.Azure.Cosmos" />
+    <PackageReference Include="Microsoft.Azure.Cosmos.Table" />
+    <PackageReference Include="Microsoft.Azure.Search" />
+    <PackageReference Include="Microsoft.Azure.Search.Data" />
+    <PackageReference Include="Microsoft.Azure.Search.Service" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="WindowsAzure.Storage" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BaGetter.Core\BaGetter.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="**/*.cs" />
-  </ItemGroup>
 </Project>

@@ -1,73 +1,70 @@
 using System;
 using BaGetter.Azure;
 using BaGetter.Core;
-//using Azure.Cosmos.Table;
-//using Azure.Search;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
-//using Azure.Storage.Blobs;
+using Microsoft.Azure.Cosmos.Table;
+using Microsoft.Azure.Search;
 
 namespace BaGetter
 {
-    //using CloudStorageAccount = Azure.Storage.CloudStorageAccount;
-    //using StorageCredentials = Azure.Storage.Auth.StorageCredentials;
+    using CloudStorageAccount = Microsoft.WindowsAzure.Storage.CloudStorageAccount;
+    using StorageCredentials = Microsoft.WindowsAzure.Storage.Auth.StorageCredentials;
 
-    //using TableStorageAccount = Azure.Cosmos.Table.CloudStorageAccount;
+    using TableStorageAccount = Microsoft.Azure.Cosmos.Table.CloudStorageAccount;
 
     public static class AzureApplicationExtensions
     {
         public static BaGetterApplication AddAzureTableDatabase(this BaGetterApplication app)
         {
-            throw new NotImplementedException();
+            app.Services.AddBaGetterOptions<AzureTableOptions>(nameof(BaGetterOptions.Database));
 
-            //app.Services.AddBaGetterOptions<AzureTableOptions>(nameof(BaGetterOptions.Database));
+            app.Services.AddTransient<TablePackageDatabase>();
+            app.Services.AddTransient<TableOperationBuilder>();
+            app.Services.AddTransient<TableSearchService>();
+            app.Services.TryAddTransient<IPackageDatabase>(provider => provider.GetRequiredService<TablePackageDatabase>());
+            app.Services.TryAddTransient<ISearchService>(provider => provider.GetRequiredService<TableSearchService>());
+            app.Services.TryAddTransient<ISearchIndexer>(provider => provider.GetRequiredService<NullSearchIndexer>());
 
-            //app.Services.AddTransient<TablePackageDatabase>();
-            //app.Services.AddTransient<TableOperationBuilder>();
-            //app.Services.AddTransient<TableSearchService>();
-            //app.Services.TryAddTransient<IPackageDatabase>(provider => provider.GetRequiredService<TablePackageDatabase>());
-            //app.Services.TryAddTransient<ISearchService>(provider => provider.GetRequiredService<TableSearchService>());
-            //app.Services.TryAddTransient<ISearchIndexer>(provider => provider.GetRequiredService<NullSearchIndexer>());
+            app.Services.AddSingleton(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<AzureTableOptions>>().Value;
 
-            //app.Services.AddSingleton(provider =>
-            //{
-            //    var options = provider.GetRequiredService<IOptions<AzureTableOptions>>().Value;
+                return TableStorageAccount.Parse(options.ConnectionString);
+            });
 
-            //    return TableStorageAccount.Parse(options.ConnectionString);
-            //});
+            app.Services.AddTransient(provider =>
+            {
+                var account = provider.GetRequiredService<TableStorageAccount>();
 
-            //app.Services.AddTransient(provider =>
-            //{
-            //    var account = provider.GetRequiredService<TableStorageAccount>();
+                return account.CreateCloudTableClient();
+            });
 
-            //    return account.CreateCloudTableClient();
-            //});
+            app.Services.AddProvider<IPackageDatabase>((provider, config) =>
+            {
+                if (!config.HasDatabaseType("AzureTable")) return null;
 
-            //app.Services.AddProvider<IPackageDatabase>((provider, config) =>
-            //{
-            //    if (!config.HasDatabaseType("AzureTable")) return null;
+                return provider.GetRequiredService<TablePackageDatabase>();
+            });
 
-            //    return provider.GetRequiredService<TablePackageDatabase>();
-            //});
+            app.Services.AddProvider<ISearchService>((provider, config) =>
+            {
+                if (!config.HasSearchType("Database")) return null;
+                if (!config.HasDatabaseType("AzureTable")) return null;
 
-            //app.Services.AddProvider<ISearchService>((provider, config) =>
-            //{
-            //    if (!config.HasSearchType("Database")) return null;
-            //    if (!config.HasDatabaseType("AzureTable")) return null;
+                return provider.GetRequiredService<TableSearchService>();
+            });
 
-            //    return provider.GetRequiredService<TableSearchService>();
-            //});
+            app.Services.AddProvider<ISearchIndexer>((provider, config) =>
+            {
+                if (!config.HasSearchType("Database")) return null;
+                if (!config.HasDatabaseType("AzureTable")) return null;
 
-            //app.Services.AddProvider<ISearchIndexer>((provider, config) =>
-            //{
-            //    if (!config.HasSearchType("Database")) return null;
-            //    if (!config.HasDatabaseType("AzureTable")) return null;
+                return provider.GetRequiredService<NullSearchIndexer>();
+            });
 
-            //    return provider.GetRequiredService<NullSearchIndexer>();
-            //});
-
-            //return app;
+            return app;
         }
 
         public static BaGetterApplication AddAzureTableDatabase(
@@ -81,46 +78,44 @@ namespace BaGetter
 
         public static BaGetterApplication AddAzureBlobStorage(this BaGetterApplication app)
         {
-            throw new NotImplementedException();
+            app.Services.AddBaGetterOptions<AzureBlobStorageOptions>(nameof(BaGetterOptions.Storage));
+            app.Services.AddTransient<BlobStorageService>();
+            app.Services.TryAddTransient<IStorageService>(provider => provider.GetRequiredService<BlobStorageService>());
 
-            //app.Services.AddBaGetterOptions<AzureBlobStorageOptions>(nameof(BaGetterOptions.Storage));
-            //app.Services.AddTransient<BlobStorageService>();
-            //app.Services.TryAddTransient<IStorageService>(provider => provider.GetRequiredService<BlobStorageService>());
+            app.Services.AddSingleton(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<AzureBlobStorageOptions>>().Value;
 
-            //app.Services.AddSingleton(provider =>
-            //{
-            //    var options = provider.GetRequiredService<IOptions<AzureBlobStorageOptions>>().Value;
+                if (!string.IsNullOrEmpty(options.ConnectionString))
+                {
+                    return CloudStorageAccount.Parse(options.ConnectionString);
+                }
 
-            //    if (!string.IsNullOrEmpty(options.ConnectionString))
-            //    {
-            //        return CloudStorageAccount.Parse(options.ConnectionString);
-            //    }
+                return new CloudStorageAccount(
+                    new StorageCredentials(
+                        options.AccountName,
+                        options.AccessKey),
+                    useHttps: true);
+            });
 
-            //    return new CloudStorageAccount(
-            //        new StorageCredentials(
-            //            options.AccountName,
-            //            options.AccessKey),
-            //        useHttps: true);
-            //});
+            app.Services.AddTransient(provider =>
+            {
+                var options = provider.GetRequiredService<IOptionsSnapshot<AzureBlobStorageOptions>>().Value;
+                var account = provider.GetRequiredService<CloudStorageAccount>();
 
-            //app.Services.AddTransient(provider =>
-            //{
-            //    var options = provider.GetRequiredService<IOptionsSnapshot<AzureBlobStorageOptions>>().Value;
-            //    var account = provider.GetRequiredService<CloudStorageAccount>();
+                var client = account.CreateCloudBlobClient();
 
-            //    var client = account.CreateCloudBlobClient();
+                return client.GetContainerReference(options.Container);
+            });
 
-            //    return client.GetContainerReference(options.Container);
-            //});
+            app.Services.AddProvider<IStorageService>((provider, config) =>
+            {
+                if (!config.HasStorageType("AzureBlobStorage")) return null;
 
-            //app.Services.AddProvider<IStorageService>((provider, config) =>
-            //{
-            //    if (!config.HasStorageType("AzureBlobStorage")) return null;
+                return provider.GetRequiredService<BlobStorageService>();
+            });
 
-            //    return provider.GetRequiredService<BlobStorageService>();
-            //});
-
-            //return app;
+            return app;
         }
 
         public static BaGetterApplication AddAzureBlobStorage(
@@ -134,48 +129,46 @@ namespace BaGetter
 
         public static BaGetterApplication AddAzureSearch(this BaGetterApplication app)
         {
-            throw new NotImplementedException();
+            app.Services.AddBaGetterOptions<AzureSearchOptions>(nameof(BaGetterOptions.Search));
 
-            //app.Services.AddBaGetterOptions<AzureSearchOptions>(nameof(BaGetterOptions.Search));
+            app.Services.AddTransient<AzureSearchBatchIndexer>();
+            app.Services.AddTransient<AzureSearchService>();
+            app.Services.AddTransient<AzureSearchIndexer>();
+            app.Services.AddTransient<IndexActionBuilder>();
+            app.Services.TryAddTransient<ISearchService>(provider => provider.GetRequiredService<AzureSearchService>());
+            app.Services.TryAddTransient<ISearchIndexer>(provider => provider.GetRequiredService<AzureSearchIndexer>());
 
-            //app.Services.AddTransient<AzureSearchBatchIndexer>();
-            //app.Services.AddTransient<AzureSearchService>();
-            //app.Services.AddTransient<AzureSearchIndexer>();
-            //app.Services.AddTransient<IndexActionBuilder>();
-            //app.Services.TryAddTransient<ISearchService>(provider => provider.GetRequiredService<AzureSearchService>());
-            //app.Services.TryAddTransient<ISearchIndexer>(provider => provider.GetRequiredService<AzureSearchIndexer>());
+            app.Services.AddSingleton(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<AzureSearchOptions>>().Value;
+                var credentials = new SearchCredentials(options.ApiKey);
 
-            //app.Services.AddSingleton(provider =>
-            //{
-            //    var options = provider.GetRequiredService<IOptions<AzureSearchOptions>>().Value;
-            //    var credentials = new SearchCredentials(options.ApiKey);
+                return new SearchServiceClient(options.AccountName, credentials);
+            });
 
-            //    return new SearchServiceClient(options.AccountName, credentials);
-            //});
+            app.Services.AddSingleton(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<AzureSearchOptions>>().Value;
+                var credentials = new SearchCredentials(options.ApiKey);
 
-            //app.Services.AddSingleton(provider =>
-            //{
-            //    var options = provider.GetRequiredService<IOptions<AzureSearchOptions>>().Value;
-            //    var credentials = new SearchCredentials(options.ApiKey);
+                return new SearchIndexClient(options.AccountName, PackageDocument.IndexName, credentials);
+            });
 
-            //    return new SearchIndexClient(options.AccountName, PackageDocument.IndexName, credentials);
-            //});
+            app.Services.AddProvider<ISearchService>((provider, config) =>
+            {
+                if (!config.HasSearchType("AzureSearch")) return null;
 
-            //app.Services.AddProvider<ISearchService>((provider, config) =>
-            //{
-            //    if (!config.HasSearchType("AzureSearch")) return null;
+                return provider.GetRequiredService<AzureSearchService>();
+            });
 
-            //    return provider.GetRequiredService<AzureSearchService>();
-            //});
+            app.Services.AddProvider<ISearchIndexer>((provider, config) =>
+            {
+                if (!config.HasSearchType("AzureSearch")) return null;
 
-            //app.Services.AddProvider<ISearchIndexer>((provider, config) =>
-            //{
-            //    if (!config.HasSearchType("AzureSearch")) return null;
+                return provider.GetRequiredService<AzureSearchIndexer>();
+            });
 
-            //    return provider.GetRequiredService<AzureSearchIndexer>();
-            //});
-
-            //return app;
+            return app;
         }
 
         public static BaGetterApplication AddAzureSearch(
