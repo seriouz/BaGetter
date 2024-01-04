@@ -3,6 +3,7 @@ using System;
 using BaGetter.Database.MySql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BaGetter.Database.MySql.Migrations
 {
     [DbContext(typeof(MySqlContext))]
-    partial class MySqlContextModelSnapshot : ModelSnapshot
+    [Migration("20240104004542_UseCharSetLatin1")]
+    partial class UseCharSetLatin1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
