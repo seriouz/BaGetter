@@ -11,8 +11,6 @@ namespace BaGetter.Database.Sqlite
 {
     public class SqliteContext : AbstractContext<SqliteContext>
     {
-        private static readonly Regex WindowsDriveLetterRegex = new("^[A-Za-z]:", RegexOptions.Compiled);
-
         /// <summary>
         /// The Sqlite error code for when a unique constraint is violated.
         /// </summary>
@@ -66,43 +64,17 @@ namespace BaGetter.Database.Sqlite
 
         /// <summary>
         /// Creates directories specified in the Database::ConnectionString config for the Sqlite database file.
-        /// Respects the difference between Windows and other OS root or relative paths.
+        /// Respects the difference of root and relative paths.
         /// </summary>
         /// <param name="connection">Instance of the <see cref="SqliteConnection"/>.</param>
         private static void CreateSqliteDataSourceDirectory(SqliteConnection connection)
         {
-            var configIsLinuxRootPath = connection.DataSource.StartsWith('/');
             var configDataSource = connection.DataSource;
-
-            string? pathToCreate = null;
-
-            if (OperatingSystem.IsWindows())
-            {
-                var windowsDriveLetter = Path.GetPathRoot(Directory.GetCurrentDirectory())!;
-
+            var pathToCreate = Path.IsPathRooted(configDataSource)
                 // root path
-                if (configIsLinuxRootPath)
-                {
-                    var directories = Path.GetDirectoryName(configDataSource);
-                    if (directories?.Length > 0) pathToCreate = Path.Combine(windowsDriveLetter, directories);
-                }
-                else if (WindowsDriveLetterRegex.IsMatch(configDataSource))
-                {
-                    pathToCreate = Path.GetDirectoryName(configDataSource);
-                }
-                else
-                {
-                    pathToCreate = CreateFullDataSourcePath();
-                }
-            }
-            else
-            {
-                pathToCreate = configIsLinuxRootPath
-                    // root path
-                    ? Path.GetDirectoryName(configDataSource)
-                    // relative path
-                    : CreateFullDataSourcePath();
-            }
+                ? Path.GetDirectoryName(configDataSource)
+                // relative path
+                : CreateFullDataSourcePath();
 
             if (pathToCreate is not null)
             {
@@ -117,7 +89,7 @@ namespace BaGetter.Database.Sqlite
                 var relativePath = Path.GetDirectoryName(configDataSource);
                 var relativeDirectoriesArray = relativePath?.Split(Path.DirectorySeparatorChar) ?? [];
                 var relativeDirectoriesCombined = Path.Combine(relativeDirectoriesArray);
-                var fullPath = Path.Combine(exeDir, Path.Combine(relativeDirectoriesCombined));
+                var fullPath = Path.Combine(exeDir, relativeDirectoriesCombined);
 
                 return fullPath;
             }
