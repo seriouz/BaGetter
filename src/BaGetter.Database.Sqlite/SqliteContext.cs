@@ -64,35 +64,15 @@ namespace BaGetter.Database.Sqlite
 
         /// <summary>
         /// Creates directories specified in the Database::ConnectionString config for the Sqlite database file.
-        /// Respects the difference of root and relative paths.
         /// </summary>
         /// <param name="connection">Instance of the <see cref="SqliteConnection"/>.</param>
         private static void CreateSqliteDataSourceDirectory(SqliteConnection connection)
         {
-            var configDataSource = connection.DataSource;
-            var pathToCreate = Path.IsPathRooted(configDataSource)
-                // root path
-                ? Path.GetDirectoryName(configDataSource)
-                // relative path
-                : CreateFullDataSourcePath();
+            var pathToCreate = Path.GetDirectoryName(connection.DataSource);
 
-            if (pathToCreate is not null)
-            {
-                Directory.CreateDirectory(pathToCreate);
-            }
+            if (pathToCreate is null) return;
 
-            return;
-
-            string CreateFullDataSourcePath()
-            {
-                var exeDir = Directory.GetCurrentDirectory();
-                var relativePath = Path.GetDirectoryName(configDataSource);
-                var relativeDirectoriesArray = relativePath?.Split(Path.DirectorySeparatorChar) ?? [];
-                var relativeDirectoriesCombined = Path.Combine(relativeDirectoriesArray);
-                var fullPath = Path.Combine(exeDir, relativeDirectoriesCombined);
-
-                return fullPath;
-            }
+            Directory.CreateDirectory(pathToCreate);
         }
     }
 }
