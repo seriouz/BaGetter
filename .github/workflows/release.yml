@@ -21,7 +21,6 @@ env:
 
 jobs:
   release_zip:
-    needs: verify
     name: Release BaGetter.zip to GitHub
     runs-on: self-hosted
     steps:
