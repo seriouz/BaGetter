@@ -52,9 +52,13 @@ jobs:
     - name: Publish
       run: |
         dotnet publish src/BaGetter --configuration Release --output artifacts
+        tar -czvf bagetter.tar.gz artifacts/
+        rm -rf artifacts/*
+        mv bagetter.tar.gz artifacts/
         echo ${{ github.sha }} > artifacts/Release.txt
     - name: Upload
       uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
       with:
         body: ${{steps.github_release.outputs.changelog}}
         name: BaGetter
