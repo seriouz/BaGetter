@@ -11,6 +11,9 @@ on:
         description: 'Package source'
         required: true
         default: 'https://api.nuget.org/v3/index.json'
+  push:
+    tags:
+      - '*'
 
 env:
   Version: ${{ github.event.inputs.releaseVersion }}
