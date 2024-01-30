@@ -52,7 +52,7 @@ jobs:
     - name: Publish
       run: |
         dotnet publish src/BaGetter --configuration Release --output artifacts
-        && echo ${{ github.sha }} > artifacts/Release.txt
+        echo ${{ github.sha }} > artifacts/Release.txt
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
