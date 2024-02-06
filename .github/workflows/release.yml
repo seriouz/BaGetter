@@ -15,15 +15,26 @@ on:
     tags:
       - 'v*.*.*'
 
-env:
-  Version: ${{ GITHUB_REF#refs/*/ }}
-  PackageVersion: ${{ GITHUB_REF#refs/*/ }}
+#env:
+#  Version: "${{ GITHUB_REF#refs/*/ }}"
+#  PackageVersion: ${{ GITHUB_REF#refs/*/ }}
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - id: get-version-tag
+        run: |
+          echo GITHUB_REF=${{ GITHUB_REF }}
+          echo RELEASE_VERSION=${{ GITHUB_REF#refs/*/ }}
+          echo GITHUB_REF_NAME=${{ GITHUB_REF_NAME }}
+    outputs:
+      RELEASE_VERSION: ${{ GITHUB_REF#refs/*/ }}
+
   verify:
     name: Run tests
     runs-on: ubuntu-latest
-
+    needs: version
     steps:
       - uses: actions/checkout@v4.1.1
 #      - name: Setup .NET
@@ -32,7 +43,7 @@ jobs:
 #          global-json-file: global.json
       - name: Test
 #        run: dotnet test --verbosity normal
-        run: echo ${{GITHUB_REF}}
+        run: echo X=${{RELEASE_VERSION}}
 
   release_zip:
 #    needs: verify
