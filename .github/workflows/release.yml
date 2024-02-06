@@ -62,11 +62,12 @@ jobs:
         with:
           global-json-file: global.json
       - name: Publish
+#          tar -czvf bagetter-${{ needs.version.outputs.RELEASE_VERSION }}.tar.gz artifacts/
         run: |
           echo Y=${{ needs.version.outputs.RELEASE_VERSION }}
           dotnet publish src/BaGetter --configuration Release --output artifacts
-          tar -czvf bagetter-${{ needs.version.outputs.RELEASE_VERSION }}.tar.gz artifacts/
           echo ${{ github.sha }} > artifacts/ReleaseSha.txt
+          7z a -tzip bagetter-${{ needs.version.outputs.RELEASE_VERSION }}.zip ./artifacts/*
       - name: Generate changelog with git-cliff
         uses: tj-actions/git-cliff@v1.4.2
         with:
