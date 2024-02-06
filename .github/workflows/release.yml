@@ -25,11 +25,17 @@ jobs:
     steps:
       - id: get-version-tag
         run: |
-          echo GITHUB_REF=${{ GITHUB_REF }}
-          echo RELEASE_VERSION=${{ GITHUB_REF#refs/*/ }}
-          echo GITHUB_REF_NAME=${{ GITHUB_REF_NAME }}
+          export GITHUB_REF="${{ GITHUB_REF }}"
+          export RELEASE_VERSION="${{ GITHUB_REF#refs/*/ }}"
+          export GITHUB_REF_NAME="${{ GITHUB_REF_NAME }}"
+
+          echo "::set-output name=RELEASE_VERSION::"${GITHUB_REF}"
+          echo "::set-output name=git_pr_sha::${RELEASE_VERSION}"
+          echo "::set-output name=git_pr_sha::${GITHUB_REF_NAME}"
     outputs:
-      RELEASE_VERSION: ${{ GITHUB_REF#refs/*/ }}
+      GITHUB_REF: ${{ steps.get-version-tag.outputs.GITHUB_REF }}
+      RELEASE_VERSION: ${{ steps.get-version-tag.outputs.RELEASE_VERSION }}
+      GITHUB_REF_NAME: ${{ steps.get-version-tag.outputs.GITHUB_REF_NAME }}
 
   verify:
     name: Run tests
@@ -43,7 +49,10 @@ jobs:
 #          global-json-file: global.json
       - name: Test
 #        run: dotnet test --verbosity normal
-        run: echo X=${{RELEASE_VERSION}}
+        run: |
+          echo X=${{needs.version.outputs.GITHUB_REF}}
+          echo Y=${{needs.version.outputs.RELEASE_VERSION}}
+          echo Z=${{needs.version.outputs.GITHUB_REF_NAME}}
 
   release_zip:
 #    needs: verify
