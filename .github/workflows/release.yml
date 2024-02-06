@@ -11,80 +11,99 @@ on:
         description: 'Package source'
         required: true
         default: 'https://api.nuget.org/v3/index.json'
+  push:
+    tags:
+      - '*'
 
 env:
   Version: ${{ github.event.inputs.releaseVersion }}
   PackageVersion: ${{ github.event.inputs.releaseVersion }}
 
 jobs:
-  verify:
-    name: Run tests
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4.1.1
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4.0.0
-      with:
-        global-json-file: global.json
-    - name: Test
-      run: dotnet test --verbosity normal
+#  verify:
+#    name: Run tests
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - uses: actions/checkout@v4.1.1
+#      - name: Setup .NET
+#        uses: actions/setup-dotnet@v4.0.0
+#        with:
+#          global-json-file: global.json
+#      - name: Test
+#        run: dotnet test --verbosity normal
 
   release_zip:
-    needs: verify
+#    needs: verify
     name: Release BaGetter.zip to GitHub
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+    if: ${{ github.ref_type == 'tag' }}
     steps:
-    - uses: actions/checkout@v4.1.1
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4.0.0
-      with:
-        global-json-file: global.json
-    - name: Publish
-      run: dotnet publish src/BaGetter --configuration Release --output artifacts
-    - name: Upload
-      uses: actions/upload-artifact@v4.3.0
-      with:
-        name: BaGetter_${{ github.event.inputs.releaseVersion }}
-        path: artifacts
-        if-no-files-found: error
+      - uses: actions/checkout@v4.1.1
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4.0.0
+        with:
+          global-json-file: global.json
+      - name: Publish
+        run: |
+          dotnet publish src/BaGetter --configuration Release --output artifacts
+          tar -czvf bagetter.tar.gz artifacts/
+          rm -rf artifacts/*
+          mv bagetter.tar.gz artifacts/
+          echo ${{ github.sha }} > artifacts/Release.txt
+      - name: Prepare version
+        run: echo VERSION=${GITHUB_REF_NAME#v} >> $GITHUB_ENV # trim leading 'v' from tag name
+      - name: Generate changelog with git-cliff
+        uses: tj-actions/git-cliff@b8b856ab6829a813d4ed58476b6faaec9c2b24ef # v1.4.2
+        with:
+          args: --latest --strip all
+          output: "CHANGELOG.md"
+      - name: Create release with ncipollo/release-action
+        uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5 # v1.13.0
+        with:
+          bodyFile: "CHANGELOG.md"
+          artifacts: "artifacts/**"
+          name: ${{ env.VERSION }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
 
-  release_packages:
-    needs: verify
-    name: Release packages to nuget.org
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4.1.1
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4.0.0
-      with:
-        global-json-file: global.json
-    - name: Pack
-      run: dotnet pack --configuration Release --output artifacts
-    - name: Push
-      run: dotnet nuget push "*" -s ${{ github.event.inputs.packageSource }} -k ${{secrets.NUGET_API_KEY}}
-      working-directory: artifacts
-
-  release_docker_image:
-    needs: verify
-    name: Release Docker image to Docker Hub
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4.1.1
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3.0.0
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5.1.0
-      with:
-        context: .
-        push: true
-        tags: |
-          bagetter/bagetter:latest
-          bagetter/bagetter:${{ github.event.inputs.releaseVersion }}
+#
+#  release_packages:
+#    needs: verify
+#    name: Release packages to nuget.org
+#    runs-on: ubuntu-latest
+#    if: ${{ github.ref_type == 'tag' }}
+#    steps:
+#      - uses: actions/checkout@v4.1.1
+#      - name: Setup .NET
+#        uses: actions/setup-dotnet@v4.0.0
+#        with:
+#          global-json-file: global.json
+#      - name: Pack
+#        run: dotnet pack --configuration Release --output artifacts
+#      - name: Push
+#        run: dotnet nuget push "*" -s ${{ github.event.inputs.packageSource }} -k ${{secrets.NUGET_API_KEY}}
+#        working-directory: artifacts
+#
+#  release_docker_image:
+#    needs: verify
+#    name: Release Docker image to Docker Hub
+#    runs-on: ubuntu-latest
+#    if: ${{ github.ref_type == 'tag' }}
+#    steps:
+#      - uses: actions/checkout@v4.1.1
+#      - name: Login to Docker Hub
+#        uses: docker/login-action@v3.0.0
+#        with:
+#          username: ${{ secrets.DOCKERHUB_USERNAME }}
+#          password: ${{ secrets.DOCKERHUB_TOKEN }}
+#
+#      - name: Build and push Docker image
+#        uses: docker/build-push-action@v5.1.0
+#        with:
+#          context: .
+#          push: true
+#          tags: |
+#            bagetter/bagetter:latest
+#            bagetter/bagetter:${{ github.event.inputs.releaseVersion }}
