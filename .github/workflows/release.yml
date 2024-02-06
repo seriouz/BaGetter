@@ -26,7 +26,7 @@ jobs:
       - id: get-version-tag
         run: |
           export GITHUB_REF="${{ GITHUB_REF }}"
-          export RELEASE_VERSION="${{ GITHUB_REF#refs/*/ }}"
+          export RELEASE_VERSION="${GITHUB_REF#refs/*/}"
           export GITHUB_REF_NAME="${{ GITHUB_REF_NAME }}"
 
           echo "::set-output name=RELEASE_VERSION::"${GITHUB_REF}"
@@ -50,9 +50,9 @@ jobs:
       - name: Test
 #        run: dotnet test --verbosity normal
         run: |
-          echo X=${{needs.version.outputs.GITHUB_REF}}
-          echo Y=${{needs.version.outputs.RELEASE_VERSION}}
-          echo Z=${{needs.version.outputs.GITHUB_REF_NAME}}
+          echo X=${{ needs.version.outputs.GITHUB_REF }}
+          echo Y=${{ needs.version.outputs.RELEASE_VERSION }}
+          echo Z=${{ needs.version.outputs.GITHUB_REF_NAME }}
 
   release_zip:
 #    needs: verify
