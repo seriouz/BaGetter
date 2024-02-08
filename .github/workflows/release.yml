@@ -77,8 +77,7 @@ jobs:
       - name: Pack
         run: |
           export PackageVersion=${{ needs.version.outputs.RELEASE_VERSION }}
-          export PackageSource=${{ github.event.inputs.packageSource }}
-          PackageSource=${PackageSource:="https://api.nuget.org/v3/index.json"}
+          export PackageSource=${PackageSource:="https://api.nuget.org/v3/index.json"}
           echo "PackageSource=${PackageSource}" >> $GITHUB_ENV
           dotnet pack --configuration Release --output artifacts
       - name: Push
