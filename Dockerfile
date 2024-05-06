@@ -14,10 +14,14 @@ RUN for file in $(ls *.csproj); do mkdir -p ${file%.*}/ && mv $file ${file%.*}/;
 
 # Set the architecture variable based on the host architecture
 RUN TARGETARCH=$(uname -m) && \
-    TARGETARCH=$(echo $TARGETARCH | sed 's/x86_64/linux\/amd64/;s/aarch64/linux\/arm64/;s/musl-linux/linux/')
+    TARGETARCH=$(echo $TARGETARCH | sed 's/x86_64/linux\/amd64/;s/aarch64/linux\/arm64/;s/musl-linux/linux/') && \
+    echo "TARGETARCH=$TARGETARCH"
 
 # Set the TARGETARCH environment variable
 ENV TARGETARCH=$TARGETARCH
+
+# Print the value of TARGETARCH for debugging
+RUN echo "TARGETARCH=$TARGETARCH"
 
 # Restore packages
 RUN dotnet restore BaGetter/BaGetter.csproj --arch $TARGETARCH
