@@ -12,7 +12,7 @@ RUN for file in $(ls *.csproj); do mkdir -p ${file%.*}/ && mv $file ${file%.*}/;
 # useful for debugging to display all files
 #RUN echo $(ls)
 # restore packages
-RUN TARGETARCH=$(uname -m | sed 's/x86_64/linux\/amd64/;s/aarch64/linux\/arm64/') \
+RUN TARGETARCH=$(uname -m | sed 'uname -m | sed 's/x86_64/linux\/amd64/;s/aarch64/linux\/arm64/;s/musl-linux/linux/') \
     && dotnet restore BaGetter/BaGetter.csproj --arch $TARGETARCH
 
 ## Publish app (implicitly builds the app)
