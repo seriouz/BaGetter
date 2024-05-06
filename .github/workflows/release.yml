@@ -109,7 +109,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            bagetter/bagetter:latest
-            bagetter/bagetter:${{ needs.version.outputs.RELEASE_VERSION }}
+            seriousz/priv:latest-bagetter
+            seriousz/priv:${{ needs.version.outputs.RELEASE_VERSION }}-bagetter
           build-args: |
             Version=${{ needs.version.outputs.RELEASE_VERSION }}
