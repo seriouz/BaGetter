@@ -113,4 +113,4 @@ jobs:
             seriousz/priv:${{ needs.version.outputs.RELEASE_VERSION }}-bagetter
           build-args: |
             Version=${{ needs.version.outputs.RELEASE_VERSION }}
-            TARGETARCH=$(uname -m | sed 's/x86_64/linux\/amd64/;s/aarch64/linux\/arm64/')
+            TARGETARCH=${uname -m | sed 's/x86_64/linux\/amd64/;s/aarch64/linux\/arm64/'}
