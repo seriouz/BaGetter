@@ -2,7 +2,6 @@ ARG Version=1.0.0
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
 ARG Version
-ARG TARGETARCH
 WORKDIR /src
 
 ## Create separate layer for `dotnet restore` to allow for caching; useful for local development
@@ -13,7 +12,8 @@ RUN for file in $(ls *.csproj); do mkdir -p ${file%.*}/ && mv $file ${file%.*}/;
 # useful for debugging to display all files
 #RUN echo $(ls)
 # restore packages
-RUN dotnet restore BaGetter/BaGetter.csproj -a $TARGETARCH
+RUN TARGETARCH=$(uname -m | sed 's/x86_64/linux\/amd64/;s/aarch64/linux\/arm64/') \
+    dotnet restore BaGetter/BaGetter.csproj --arch $TARGETARCH
 
 ## Publish app (implicitly builds the app)
 FROM build AS publish
