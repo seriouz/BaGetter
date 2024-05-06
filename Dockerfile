@@ -13,7 +13,7 @@ RUN for file in $(ls *.csproj); do mkdir -p ${file%.*}/ && mv $file ${file%.*}/;
 #RUN echo $(ls)
 # restore packages
 RUN TARGETARCH=$(uname -m | sed 's/x86_64/linux\/amd64/;s/aarch64/linux\/arm64/') \
-    dotnet restore BaGetter/BaGetter.csproj --arch $TARGETARCH
+    && dotnet restore BaGetter/BaGetter.csproj --arch $TARGETARCH
 
 ## Publish app (implicitly builds the app)
 FROM build AS publish
