@@ -11,9 +11,16 @@ COPY ./Directory.Packages.props ./nuget.config ./src/**/*.csproj ./
 RUN for file in $(ls *.csproj); do mkdir -p ${file%.*}/ && mv $file ${file%.*}/; done
 # useful for debugging to display all files
 #RUN echo $(ls)
-# restore packages
-RUN TARGETARCH=$(uname -m | sed 'uname -m | sed 's/x86_64/linux\/amd64/;s/aarch64/linux\/arm64/;s/musl-linux/linux/') \
-    && dotnet restore BaGetter/BaGetter.csproj --arch $TARGETARCH
+
+# Set the architecture variable based on the host architecture
+RUN TARGETARCH=$(uname -m) && \
+    TARGETARCH=$(echo $TARGETARCH | sed 's/x86_64/linux\/amd64/;s/aarch64/linux\/arm64/;s/musl-linux/linux/')
+
+# Set the TARGETARCH environment variable
+ENV TARGETARCH=$TARGETARCH
+
+# Restore packages
+RUN dotnet restore BaGetter/BaGetter.csproj --arch $TARGETARCH
 
 ## Publish app (implicitly builds the app)
 FROM build AS publish
