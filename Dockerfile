@@ -2,6 +2,7 @@ ARG Version=1.0.0
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
 ARG Version
+#ARG TARGETARCH
 WORKDIR /src
 
 ## Create separate layer for `dotnet restore` to allow for caching; useful for local development
